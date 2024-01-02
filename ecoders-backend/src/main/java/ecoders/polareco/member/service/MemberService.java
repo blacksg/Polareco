@@ -100,6 +100,20 @@ public class MemberService {
         memberRepository.save(member);
     }
 
+    public void updateUsername(String email, String newUsername) {
+        Member member = findMemberByEmail(email);
+        member.setUsername(newUsername);
+        memberRepository.save(member);
+    }
+
+    public void deleteMember(String email, String password) {
+        Member member = findMemberByEmail(email);
+        if (!passwordEncoder.matches(password, member.getPassword())) {
+            throw new BusinessLogicException(ExceptionCode.PASSWORD_MISMATCH);
+        }
+        memberRepository.delete(member);
+    }
+
     public Member findMemberByEmail(String email) {
         Member member = memberRepository.findByEmail(email);
         if (member == null) {

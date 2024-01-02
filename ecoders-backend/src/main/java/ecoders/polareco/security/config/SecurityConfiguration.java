@@ -2,6 +2,7 @@ package ecoders.polareco.security.config;
 
 import ecoders.polareco.auth.filter.JwtVerificationFilter;
 import ecoders.polareco.auth.filter.PolarecoLoginFilter;
+import ecoders.polareco.auth.handler.LoginEntryPoint;
 import ecoders.polareco.auth.handler.LoginFailureHandler;
 import ecoders.polareco.auth.handler.LoginSuccessHandler;
 import ecoders.polareco.auth.handler.LogoutHandler;
@@ -11,6 +12,7 @@ import ecoders.polareco.http.service.HttpService;
 import ecoders.polareco.member.repository.MemberRepository;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +37,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Configuration
+@Slf4j
 public class SecurityConfiguration {
 
     @Value("${client-url}")
@@ -51,7 +54,8 @@ public class SecurityConfiguration {
         HttpSecurity builder,
         HttpService httpService,
         JwtService jwtService,
-        MemberRepository memberRepository
+        MemberRepository memberRepository,
+        LoginEntryPoint loginEntryPoint
     ) throws Exception {
         return builder
             .headers().frameOptions().sameOrigin()
@@ -59,10 +63,11 @@ public class SecurityConfiguration {
             .formLogin().disable()
             .httpBasic().disable()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and().cors(Customizer.withDefaults())
-            .logout().logoutSuccessHandler(new LogoutHandler())
+            .and().cors().configurationSource(corsConfigurationSource())
+            .and().logout().logoutSuccessHandler(new LogoutHandler())
+            .and().exceptionHandling().authenticationEntryPoint(loginEntryPoint)
             .and().oauth2Client(Customizer.withDefaults())
-            .oauth2Login().successHandler(new OAuth2LoginSuccessHandler(jwtService, httpService, memberRepository))
+            .oauth2Login().successHandler(new OAuth2LoginSuccessHandler(jwtService, memberRepository))
             .and().authorizeHttpRequests(registry -> {
                 registry
                     .antMatchers(HttpMethod.GET, "/member/my-info").authenticated()
@@ -75,11 +80,15 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.setAllowedOrigins(List.of(clientUrl));
+        corsConfiguration.setAllowedOrigins(List.of("http://localhost:5173", "http://polareco-deploy.s3-website.ap-northeast-2.amazonaws.com", "http://ec2-52-78-153-168.ap-northeast-2.compute.amazonaws.com:8080"));
         corsConfiguration.setAllowedMethods(List.of("POST", "GET", "PATCH", "DELETE", "OPTIONS"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
+        corsConfiguration.setExposedHeaders(List.of("*"));
+        corsConfiguration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource corsConfigurationSource = new UrlBasedCorsConfigurationSource();
         corsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
+
         return corsConfigurationSource;
     }
 

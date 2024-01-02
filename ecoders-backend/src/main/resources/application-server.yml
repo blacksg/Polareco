@@ -12,3 +12,7 @@ spring:
     database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
     hibernate:
       ddl-auto: update
+  # Redis 설정
+  redis:
+    host: redis
+    port: 6379

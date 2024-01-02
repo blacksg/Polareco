@@ -3,6 +3,7 @@ package ecoders.polareco.member.controller;
 import ecoders.polareco.member.dto.*;
 import ecoders.polareco.member.entity.Member;
 import ecoders.polareco.member.service.MemberService;
+import ecoders.polareco.member.validation.annotation.Username;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -81,10 +82,28 @@ public class MemberController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/update/username")
+    public ResponseEntity<?> updateUsername(
+        @AuthenticationPrincipal String email,
+        @RequestParam("newUsername") @Username String newUsername
+    ) {
+        memberService.updateUsername(email, newUsername);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/check/google")
     public ResponseEntity<?> checkIsGoogleMember(@RequestParam("email") String email) {
         boolean isGoogleMember = memberService.checkIsGoogleMember(email);
         GoogleMemberCheckResponse response = new GoogleMemberCheckResponse(isGoogleMember);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/member/my-info")
+    public ResponseEntity<?> deleteMember(
+        @AuthenticationPrincipal String email,
+        @RequestParam("password") String password
+    ) {
+        memberService.deleteMember(email, password);
+        return ResponseEntity.noContent().build();
     }
 }
